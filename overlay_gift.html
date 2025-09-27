@@ -1,0 +1,50 @@
+<body style="background:transparent; margin:0; overflow:hidden;">
+  <div id="alerts" style="font-size:28px; color:white; font-weight:bold;"></div>
+
+  <script>
+    let showImages = true;
+    let showGiftName = true;
+
+    function connectWS() {
+      const ws = new WebSocket("ws://localhost:8080");
+
+      ws.onopen = () => console.log("Gift overlay connected ✅");
+      ws.onclose = () => {
+        console.log("Gift overlay disconnected ❌, retrying in 2s...");
+        setTimeout(connectWS, 2000);
+      };
+
+      ws.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        console.log("Gift overlay received:", data);
+
+        if (data.type === "settings" && data.settings) {
+          showImages = data.settings.showImages;
+          showGiftName = data.settings.showGiftName;
+          return;
+        }
+
+        if (data.type !== "gift") return;
+
+        const giftName = data.giftName || "Unknown Gift";
+        const giftImage = data.giftImage || "";
+
+        let content = `🎁 ${data.user} sent a ${giftName}`;
+        if (showImages && giftImage) {
+          content = `<img src="${giftImage}" style="height:40px;vertical-align:middle;margin-right:8px;"> ${content}`;
+        }
+        if (!showGiftName) {
+          content = content.replace(` sent a ${giftName}`, " sent a gift!");
+        }
+
+        const el = document.createElement("div");
+        el.className = "alert";
+        el.innerHTML = content;
+
+        document.getElementById("alerts").appendChild(el);
+        setTimeout(() => el.remove(), 5000);
+      };
+    }
+    connectWS();
+  </script>
+</body>

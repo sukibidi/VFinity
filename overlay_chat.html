@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Chat Overlay</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: transparent;
+            overflow: hidden;
+            font-family: Arial, sans-serif;
+            width: 100vw;
+            height: 100vh;
+        }
+        
+        #alerts {
+            position: absolute;
+            max-width: 400px;
+        }
+        
+        .alert {
+            background: rgba(0, 0, 0, 0.85);
+            color: white;
+            margin: 10px 0;
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-weight: bold;
+            border-left: 4px solid #2563eb;
+            animation: slideIn 0.3s forwards;
+            backdrop-filter: blur(5px);
+        }
+        
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        
+        .fade-out {
+            animation: fadeOut 0.3s forwards;
+        }
+        
+        @keyframes fadeOut {
+            from { opacity: 1; transform: translateX(0); }
+            to { opacity: 0; transform: translateX(100%); }
+        }
+        
+        .profile-pic {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+        
+        .sticker {
+            max-width: 40px;
+            max-height: 40px;
+            vertical-align: middle;
+            margin: 0 5px;
+        }
+    </style>
+</head>
+<body>
+    <div id="alerts"></div>
+
+    <script>
+        let ws;
+        let chatSettings = {};
+        
+        function connectWebSocket() {
+            ws = new WebSocket('ws://localhost:8080');
+            
+            ws.onopen = function() {
+                console.log('✅ Connected to WebSocket');
+            };
+            
+            ws.onmessage = function(event) {
+                try {
+                    const data = JSON.parse(event.data);
+                    
+                    if (data.type === 'chat') {
+                        showMessage(data.user, data.message);
+                    } else if (data.type === 'chat_settings') {
+                        chatSettings = data.settings;
+                        applyChatSettings();
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                }
+            };
+            
+            ws.onclose = function() {
+                console.log('❌ Disconnected, retrying...');
+                setTimeout(connectWebSocket, 3000);
+            };
+        }
+        
+        function applyChatSettings() {
+            const alertsContainer = document.getElementById('alerts');
+            
+            // Apply position
+            alertsContainer.style.bottom = chatSettings.position?.includes('bottom') ? '20px' : 'auto';
+            alertsContainer.style.top = chatSettings.position?.includes('top') ? '20px' : 'auto';
+            alertsContainer.style.right = chatSettings.position?.includes('right') ? '20px' : 'auto';
+            alertsContainer.style.left = chatSettings.position?.includes('left') ? '20px' : 'auto';
+        }
+        
+        function showMessage(user, message) {
+            const alertsContainer = document.getElementById('alerts');
+            const messageElement = document.createElement('div');
+            messageElement.className = 'alert';
+            
+            // Apply current settings
+            messageElement.style.fontSize = (chatSettings.fontSize || 16) + 'px';
+            messageElement.style.color = chatSettings.textColor || '#ffffff';
+            messageElement.style.backgroundColor = chatSettings.backgroundColor || 'rgba(0,0,0,0.7)';
+            messageElement.style.borderLeftColor = chatSettings.textColor || '#2563eb';
+            
+            let messageHTML = `
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span>💬</span>
+                    <div>
+                        <div style="color: ${chatSettings.textColor || '#60a5fa'}; font-size: ${(chatSettings.fontSize || 16) - 2}px;">${user}</div>
+                        <div style="margin-top: 2px;">${message}</div>
+                    </div>
+                </div>
+            `;
+            
+            messageElement.innerHTML = messageHTML;
+            alertsContainer.appendChild(messageElement);
+            
+            // Remove after delay
+            setTimeout(() => {
+                messageElement.classList.add('fade-out');
+                setTimeout(() => messageElement.remove(), 300);
+            }, 6000);
+            
+            // Limit messages
+            const messages = alertsContainer.getElementsByClassName('alert');
+            if (messages.length > 3) {
+                messages[0].classList.add('fade-out');
+                setTimeout(() => messages[0].remove(), 300);
+            }
+        }
+        
+        // Start connection
+        connectWebSocket();
+        
+        // Request current settings
+        setTimeout(() => {
+            if (ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({ type: 'get_chat_settings' }));
+            }
+        }, 1000);
+    </script>
+</body>
+</html>

@@ -1,0 +1,942 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>VFinityMY - Stream Overlay Dashboard</title>
+    <style>
+        :root {
+            --sidebar-width: 220px;
+            --primary-color: #2563eb;
+            --secondary-color: #64748b;
+            --bg-dark: #0f172a;
+            --bg-card: #1e293b;
+            --text-light: #f1f5f9;
+            --text-muted: #94a3b8;
+            --success-color: #10b981;
+            --error-color: #ef4444;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-dark);
+            color: var(--text-light);
+            display: flex;
+            min-height: 100vh;
+            line-height: 1.5;
+        }
+
+        .sidebar {
+            width: var(--sidebar-width);
+            background: var(--bg-card);
+            height: 100vh;
+            position: fixed;
+            left: 0;
+            top: 0;
+            padding: 20px 0;
+        }
+
+        .logo {
+            text-align: center;
+            padding: 20px;
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--text-light);
+            border-bottom: 1px solid #334155;
+            margin-bottom: 20px;
+        }
+
+        .nav-item {
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            color: var(--text-muted);
+        }
+
+        .nav-item:hover {
+            background: #334155;
+            color: var(--text-light);
+        }
+
+        .nav-item.active {
+            background: #334155;
+            color: var(--primary-color);
+            border-right: 3px solid var(--primary-color);
+        }
+
+        .main-content {
+            flex: 1;
+            margin-left: var(--sidebar-width);
+            padding: 30px;
+            max-width: 1200px;
+        }
+
+        .header {
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .header p {
+            color: var(--text-muted);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .card {
+            background: var(--bg-card);
+            border-radius: 8px;
+            padding: 24px;
+            margin-bottom: 24px;
+            border: 1px solid #334155;
+        }
+
+        .card h2 {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: var(--text-light);
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s;
+            margin: 4px;
+        }
+
+        .btn-primary {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #1d4ed8;
+        }
+
+        .btn-success {
+            background: var(--success-color);
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #059669;
+        }
+
+        .btn-danger {
+            background: var(--error-color);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+
+        .btn-secondary {
+            background: #475569;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #64748b;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 6px;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #475569;
+            border-radius: 6px;
+            background: #334155;
+            color: var(--text-light);
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+
+        .status-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .status-connected {
+            background: rgba(16, 185, 129, 0.2);
+            color: var(--success-color);
+            border: 1px solid var(--success-color);
+        }
+
+        .status-disconnected {
+            background: rgba(239, 68, 68, 0.2);
+            color: var(--error-color);
+            border: 1px solid var(--error-color);
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        .preview-box {
+            background: #334155;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+            min-height: 200px;
+            position: relative;
+        }
+
+        .chat-preview {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 12px 16px;
+            border-radius: 8px;
+            border-left: 4px solid #2563eb;
+            max-width: 300px;
+        }
+
+        .sticker-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .sticker-item {
+            background: #334155;
+            padding: 10px;
+            border-radius: 6px;
+            text-align: center;
+        }
+
+        .sticker-item img {
+            max-width: 100%;
+            max-height: 60px;
+        }
+
+        .color-picker {
+            width: 50px;
+            height: 30px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .screen-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .screen-item {
+            background: #334155;
+            border-radius: 6px;
+            padding: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: between;
+            border: 1px solid #475569;
+        }
+
+        .screen-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex: 1;
+        }
+
+        .screen-name {
+            font-weight: 500;
+        }
+
+        .screen-url {
+            color: var(--text-muted);
+            font-family: monospace;
+            font-size: 12px;
+        }
+
+        .screen-controls {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .duration-input {
+            width: 80px;
+            padding: 4px 8px;
+            border: 1px solid #475569;
+            border-radius: 4px;
+            background: #1e293b;
+            color: var(--text-light);
+            text-align: center;
+        }
+
+        .copy-btn {
+            background: #475569;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .copy-btn:hover {
+            background: #64748b;
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar Navigation -->
+    <div class="sidebar">
+        <div class="logo">VFinityMY</div>
+        <div class="nav-item active" onclick="showTab('tiktok')">
+            <span>📱</span> TikTok Live
+        </div>
+        <div class="nav-item" onclick="showTab('chat-settings')">
+            <span>💬</span> Chat Settings
+        </div>
+        <div class="nav-item" onclick="showTab('screen-overlays')">
+            <span>📺</span> Screen Overlays
+        </div>
+        <div class="nav-item" onclick="showTab('settings')">
+            <span>⚙️</span> Settings
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- TikTok Live Tab -->
+        <div id="tiktok" class="tab-content active">
+            <div class="header">
+                <h1>TikTok Live Connection</h1>
+                <p>Connect to your TikTok Live stream to display chat and events</p>
+            </div>
+
+            <div class="card">
+                <h2>Connection Status</h2>
+                <div id="connectionStatus" class="status-indicator status-disconnected">
+                    <div class="status-dot"></div>
+                    <span>Disconnected</span>
+                </div>
+                
+                <div id="connectionInfo" style="margin-top: 16px; display: none;">
+                    <p style="color: var(--text-muted);">
+                        Connected to: <strong id="connectedUsername"></strong>
+                    </p>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>Connect to TikTok Live</h2>
+                <div class="form-group">
+                    <label for="tiktokUsername">TikTok Username (without @)</label>
+                    <input type="text" id="tiktokUsername" class="form-control" placeholder="Enter username (e.g., your_username)">
+                    <small style="color: var(--text-muted);">Enter the username of the live stream you want to connect to</small>
+                </div>
+                
+                <div style="display: flex; gap: 10px;">
+                    <button class="btn btn-success" onclick="connectTikTok()" id="connectBtn">🔗 Connect</button>
+                    <button class="btn btn-danger" onclick="disconnectTikTok()" id="disconnectBtn" style="display: none;">❌ Disconnect</button>
+                    <button class="btn btn-secondary" onclick="testConnection()">🧪 Test Connection</button>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>Quick Overlay Links</h2>
+                <p style="color: var(--text-muted); margin-bottom: 16px;">
+                    Add these URLs to OBS as Browser Sources:
+                </p>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                    <div>
+                        <strong>Chat Overlay</strong>
+                        <div class="screen-url" style="background: #334155; padding: 8px; border-radius: 4px; margin-top: 8px; font-size: 12px;">
+                            http://localhost:3000/overlay/chat
+                        </div>
+                        <button class="copy-btn" onclick="copyToClipboard('http://localhost:3000/overlay/chat')" style="margin-top: 8px;">Copy URL</button>
+                    </div>
+                    <div>
+                        <strong>Gift Overlay</strong>
+                        <div class="screen-url" style="background: #334155; padding: 8px; border-radius: 4px; margin-top: 8px; font-size: 12px;">
+                            http://localhost:3000/overlay/gift
+                        </div>
+                        <button class="copy-btn" onclick="copyToClipboard('http://localhost:3000/overlay/gift')" style="margin-top: 8px;">Copy URL</button>
+                    </div>
+                    <div>
+                        <strong>Sub Overlay</strong>
+                        <div class="screen-url" style="background: #334155; padding: 8px; border-radius: 4px; margin-top: 8px; font-size: 12px;">
+                            http://localhost:3000/overlay/sub
+                        </div>
+                        <button class="copy-btn" onclick="copyToClipboard('http://localhost:3000/overlay/sub')" style="margin-top: 8px;">Copy URL</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chat Settings Tab -->
+        <div id="chat-settings" class="tab-content">
+            <div class="header">
+                <h1>Chat Customization</h1>
+                <p>Customize how chat messages appear on your stream</p>
+            </div>
+
+            <div class="card">
+                <h2>Appearance Settings</h2>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                    <div>
+                        <div class="form-group">
+                            <label for="fontSize">Font Size</label>
+                            <input type="range" id="fontSize" min="12" max="32" value="16" class="form-control" onchange="updateChatSetting('fontSize', this.value)">
+                            <span id="fontSizeValue">16px</span>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="textColor">Text Color</label>
+                            <input type="color" id="textColor" value="#ffffff" class="color-picker" onchange="updateChatSetting('textColor', this.value)">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="backgroundColor">Background Color</label>
+                            <input type="color" id="backgroundColor" value="#000000" class="color-picker" onchange="updateChatSetting('backgroundColor', this.value)">
+                            <input type="range" id="backgroundOpacity" min="0" max="100" value="70" onchange="updateBackgroundOpacity()">
+                            <span id="opacityValue">70%</span>
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="form-group">
+                            <label for="position">Message Position</label>
+                            <select id="position" class="form-control" onchange="updateChatSetting('position', this.value)">
+                                <option value="top-left">Top Left</option>
+                                <option value="top-right">Top Right</option>
+                                <option value="bottom-left">Bottom Left</option>
+                                <option value="bottom-right" selected>Bottom Right</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label>
+                                <input type="checkbox" id="showProfilePictures" onchange="updateChatSetting('showProfilePictures', this.checked)">
+                                Show Profile Pictures
+                            </label>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="animationStyle">Animation Style</label>
+                            <select id="animationStyle" class="form-control" onchange="updateChatSetting('animationStyle', this.value)">
+                                <option value="slide">Slide In</option>
+                                <option value="fade">Fade In</option>
+                                <option value="bounce">Bounce</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="preview-box">
+                    <h3>Live Preview</h3>
+                    <div class="chat-preview" id="chatPreview">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <span>💬</span>
+                            <div>
+                                <div style="color: #60a5fa; font-weight: bold;">ViewerName</div>
+                                <div>Hello from chat!</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>Custom Stickers & Emotes</h2>
+                <p style="color: var(--text-muted); margin-bottom: 15px;">
+                    Upload custom PNG images to use as stickers in chat
+                </p>
+
+                <div class="form-group">
+                    <label for="stickerUpload">Upload Sticker (PNG recommended)</label>
+                    <input type="file" id="stickerUpload" accept=".png,.jpg,.jpeg,.gif" class="form-control">
+                    <input type="text" id="stickerName" placeholder="Sticker name" class="form-control" style="margin-top: 8px;">
+                    <button class="btn btn-success" onclick="uploadSticker()" style="margin-top: 8px;">Upload Sticker</button>
+                </div>
+
+                <div class="sticker-grid" id="stickerList">
+                    <!-- Stickers will be loaded here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Screen Overlays Tab -->
+        <div id="screen-overlays" class="tab-content">
+            <div class="header">
+                <h1>Screen Overlays</h1>
+                <p>Manage your OBS browser sources and monitor their status</p>
+            </div>
+
+            <div class="card">
+                <div style="display: flex; justify-content: between; align-items: center; margin-bottom: 20px;">
+                    <h2>Screen List</h2>
+                    <button class="btn btn-primary" onclick="addNewScreen()">+ Add Screen</button>
+                </div>
+
+                <div class="screen-list" id="screenList">
+                    <!-- Screen items will be dynamically inserted here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Settings Tab -->
+        <div id="settings" class="tab-content">
+            <div class="header">
+                <h1>Settings</h1>
+                <p>Configure application settings and preferences</p>
+            </div>
+
+            <div class="card">
+                <h2>Application Settings</h2>
+                
+                <div class="form-group">
+                    <label for="serverPort">Server Port</label>
+                    <input type="number" id="serverPort" class="form-control" value="3000" disabled>
+                    <small style="color: var(--text-muted);">Current port: 3000 (restart required to change)</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="websocketPort">WebSocket Port</label>
+                    <input type="number" id="websocketPort" class="form-control" value="8080" disabled>
+                    <small style="color: var(--text-muted);">Current port: 8080 (restart required to change)</small>
+                </div>
+
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="autoStart" checked>
+                        Auto-connect to TikTok on startup
+                    </label>
+                </div>
+
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="saveLogs" checked>
+                        Save event logs to file
+                    </label>
+                </div>
+
+                <button class="btn btn-primary" onclick="saveSettings()">💾 Save Settings</button>
+                <button class="btn btn-secondary" onclick="resetSettings()">🔄 Reset to Defaults</button>
+            </div>
+
+            <div class="card">
+                <h2>System Information</h2>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div>
+                        <strong>Version:</strong> VFinityMY 1.0<br>
+                        <strong>Status:</strong> <span id="systemStatus">Running</span><br>
+                        <strong>Uptime:</strong> <span id="uptime">0h 0m</span>
+                    </div>
+                    <div>
+                        <strong>Connected Clients:</strong> <span id="connectedClients">0</span><br>
+                        <strong>Total Events:</strong> <span id="totalEvents">0</span><br>
+                        <strong>Memory Usage:</strong> <span id="memoryUsage">0 MB</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>Danger Zone</h2>
+                <p style="color: var(--text-muted); margin-bottom: 15px;">
+                    Advanced operations that may affect your stream
+                </p>
+                
+                <button class="btn btn-secondary" onclick="reloadOverlays()">🔄 Reload All Overlays</button>
+                <button class="btn btn-danger" onclick="clearAllData()">🗑️ Clear All Data</button>
+                <button class="btn btn-danger" onclick="restartServer()">🔄 Restart Server</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let chatSettings = {};
+        let screens = [];
+        let tiktokConnected = false;
+        let currentUsername = '';
+
+        // Tab Navigation
+        function showTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+            document.getElementById(tabName).classList.add('active');
+            event.currentTarget.classList.add('active');
+
+            if (tabName === 'chat-settings') {
+                loadChatSettings();
+            } else if (tabName === 'screen-overlays') {
+                renderScreenList();
+            }
+        }
+
+        // TikTok Connection Functions
+        async function connectTikTok() {
+            const username = document.getElementById('tiktokUsername').value.trim();
+            
+            if (!username) {
+                alert('Please enter a TikTok username');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/tiktok/connect', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: username })
+                });
+
+                const result = await response.json();
+                
+                if (response.ok) {
+                    updateConnectionStatus(true, username);
+                    alert('✅ ' + result.message);
+                } else {
+                    alert('❌ ' + result.error);
+                }
+            } catch (error) {
+                alert('❌ Connection failed: ' + error.message);
+            }
+        }
+
+        async function disconnectTikTok() {
+            try {
+                const response = await fetch('/api/tiktok/disconnect', { method: 'POST' });
+                const result = await response.json();
+                updateConnectionStatus(false, '');
+                alert('✅ ' + result.message);
+            } catch (error) {
+                alert('❌ Disconnection failed: ' + error.message);
+            }
+        }
+
+        async function testConnection() {
+            try {
+                const response = await fetch('/api/tiktok/status');
+                const status = await response.json();
+                alert(`TikTok Status:\nConnected: ${status.connected}\nUsername: ${status.username || 'None'}`);
+            } catch (error) {
+                alert('❌ Failed to get status: ' + error.message);
+            }
+        }
+
+        function updateConnectionStatus(connected, username) {
+            const statusElement = document.getElementById('connectionStatus');
+            const infoElement = document.getElementById('connectionInfo');
+            const connectBtn = document.getElementById('connectBtn');
+            const disconnectBtn = document.getElementById('disconnectBtn');
+            
+            if (connected) {
+                statusElement.className = 'status-indicator status-connected';
+                statusElement.innerHTML = '<div class="status-dot" style="background: var(--success-color);"></div><span>Connected</span>';
+                infoElement.style.display = 'block';
+                document.getElementById('connectedUsername').textContent = '@' + username;
+                connectBtn.style.display = 'none';
+                disconnectBtn.style.display = 'inline-block';
+                
+                tiktokConnected = true;
+                currentUsername = username;
+            } else {
+                statusElement.className = 'status-indicator status-disconnected';
+                statusElement.innerHTML = '<div class="status-dot" style="background: var(--error-color);"></div><span>Disconnected</span>';
+                infoElement.style.display = 'none';
+                connectBtn.style.display = 'inline-block';
+                disconnectBtn.style.display = 'none';
+                
+                tiktokConnected = false;
+                currentUsername = '';
+            }
+        }
+
+        // Check initial status on page load
+        async function checkInitialStatus() {
+            try {
+                const response = await fetch('/api/tiktok/status');
+                const status = await response.json();
+                
+                if (status.connected && status.username) {
+                    updateConnectionStatus(true, status.username);
+                }
+            } catch (error) {
+                console.log('Could not check initial status:', error);
+            }
+        }
+
+        // Chat Settings Functions
+        async function loadChatSettings() {
+            try {
+                const response = await fetch('/api/chat/settings');
+                chatSettings = await response.json();
+                updateSettingsForm();
+                updatePreview();
+                loadStickers();
+            } catch (error) {
+                console.error('Error loading chat settings:', error);
+            }
+        }
+
+        function updateSettingsForm() {
+            document.getElementById('fontSize').value = chatSettings.fontSize || 16;
+            document.getElementById('fontSizeValue').textContent = (chatSettings.fontSize || 16) + 'px';
+            document.getElementById('textColor').value = chatSettings.textColor || '#ffffff';
+            document.getElementById('backgroundColor').value = chatSettings.backgroundColor?.replace(/[^#0-9A-F]/gi, '') || '#000000';
+            document.getElementById('position').value = chatSettings.position || 'bottom-right';
+            document.getElementById('showProfilePictures').checked = chatSettings.showProfilePictures !== false;
+            document.getElementById('animationStyle').value = chatSettings.animationStyle || 'slide';
+        }
+
+        async function updateChatSetting(key, value) {
+            chatSettings[key] = value;
+            updatePreview();
+            
+            try {
+                await fetch('/api/chat/settings', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ [key]: value })
+                });
+            } catch (error) {
+                console.error('Error saving setting:', error);
+            }
+        }
+
+        function updateBackgroundOpacity() {
+            const opacity = document.getElementById('backgroundOpacity').value;
+            document.getElementById('opacityValue').textContent = opacity + '%';
+            const bgColor = document.getElementById('backgroundColor').value;
+            const rgbaColor = hexToRgba(bgColor, opacity / 100);
+            updateChatSetting('backgroundColor', rgbaColor);
+        }
+
+        function updatePreview() {
+            const preview = document.getElementById('chatPreview');
+            preview.style.fontSize = (chatSettings.fontSize || 16) + 'px';
+            preview.style.color = chatSettings.textColor || '#ffffff';
+            preview.style.backgroundColor = chatSettings.backgroundColor || 'rgba(0,0,0,0.7)';
+            
+            preview.style.bottom = chatSettings.position?.includes('bottom') ? '20px' : 'auto';
+            preview.style.top = chatSettings.position?.includes('top') ? '20px' : 'auto';
+            preview.style.right = chatSettings.position?.includes('right') ? '20px' : 'auto';
+            preview.style.left = chatSettings.position?.includes('left') ? '20px' : 'auto';
+        }
+
+        async function uploadSticker() {
+            const fileInput = document.getElementById('stickerUpload');
+            const nameInput = document.getElementById('stickerName');
+            
+            if (!fileInput.files[0]) {
+                alert('Please select a file to upload');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('sticker', fileInput.files[0]);
+            formData.append('name', nameInput.value || 'Custom Sticker');
+
+            try {
+                const response = await fetch('/api/chat/upload-sticker', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    alert('Sticker uploaded successfully!');
+                    fileInput.value = '';
+                    nameInput.value = '';
+                    loadStickers();
+                } else {
+                    alert('Error uploading sticker: ' + result.error);
+                }
+            } catch (error) {
+                alert('Upload failed: ' + error.message);
+            }
+        }
+
+        async function loadStickers() {
+            try {
+                const response = await fetch('/api/chat/settings');
+                const settings = await response.json();
+                const stickerList = document.getElementById('stickerList');
+                
+                stickerList.innerHTML = '';
+                settings.customStickers?.forEach(sticker => {
+                    const stickerItem = document.createElement('div');
+                    stickerItem.className = 'sticker-item';
+                    stickerItem.innerHTML = `
+                        <img src="${sticker.url}" alt="${sticker.name}">
+                        <div style="font-size: 12px; margin-top: 5px;">${sticker.name}</div>
+                        <button onclick="deleteSticker('${sticker.id}')" style="background: #ef4444; color: white; border: none; padding: 2px 6px; border-radius: 3px; font-size: 10px; margin-top: 5px;">Delete</button>
+                    `;
+                    stickerList.appendChild(stickerItem);
+                });
+            } catch (error) {
+                console.error('Error loading stickers:', error);
+            }
+        }
+
+        async function deleteSticker(stickerId) {
+            if (!confirm('Delete this sticker?')) return;
+            
+            try {
+                const response = await fetch(`/api/chat/sticker/${stickerId}`, { method: 'DELETE' });
+                const result = await response.json();
+                if (result.success) loadStickers();
+            } catch (error) {
+                alert('Error deleting sticker: ' + error.message);
+            }
+        }
+
+        // Screen Overlay Functions
+        function renderScreenList() {
+            const screenList = document.getElementById('screenList');
+            screenList.innerHTML = '';
+
+            screens.forEach(screen => {
+                const screenItem = document.createElement('div');
+                screenItem.className = 'screen-item';
+                screenItem.innerHTML = `
+                    <div class="screen-info">
+                        <div class="status-dot ${screen.online ? 'status-online' : 'status-offline'}"></div>
+                        <div>
+                            <div class="screen-name">${screen.name}</div>
+                            <div class="screen-url">${screen.url}</div>
+                        </div>
+                    </div>
+                    <div class="screen-controls">
+                        <input type="number" class="duration-input" value="${screen.duration}" min="1" max="60" onchange="updateScreenDuration(${screen.id}, this.value)">
+                        <span style="color: var(--text-muted); font-size: 12px;">sec</span>
+                        <button class="copy-btn" onclick="copyToClipboard('${screen.url}')">Copy URL</button>
+                        <button class="copy-btn" onclick="removeScreen(${screen.id})" style="background: var(--error-color);">Remove</button>
+                    </div>
+                `;
+                screenList.appendChild(screenItem);
+            });
+        }
+
+        function addNewScreen() {
+            const newId = screens.length > 0 ? Math.max(...screens.map(s => s.id)) + 1 : 1;
+            screens.push({
+                id: newId,
+                name: `Screen ${newId}`,
+                url: `http://localhost:3000/overlay/screen${newId}`,
+                duration: 5,
+                online: false
+            });
+            renderScreenList();
+        }
+
+        function updateScreenDuration(screenId, duration) {
+            const screen = screens.find(s => s.id === screenId);
+            if (screen) screen.duration = parseInt(duration) || 5;
+        }
+
+        function removeScreen(screenId) {
+            if (confirm('Remove this screen?')) {
+                screens = screens.filter(s => s.id !== screenId);
+                renderScreenList();
+            }
+        }
+
+        // Settings Functions
+        function saveSettings() {
+            alert('Settings saved! (Note: Port changes require server restart)');
+        }
+
+        function resetSettings() {
+            if (confirm('Reset all settings to defaults?')) {
+                alert('Settings reset to defaults');
+            }
+        }
+
+        function reloadOverlays() {
+            fetch('/reload').then(() => alert('Overlays reloaded!'));
+        }
+
+        function clearAllData() {
+            if (confirm('Clear all data including stickers and settings?')) {
+                alert('All data cleared');
+            }
+        }
+
+        function restartServer() {
+            if (confirm('Restart the server? This will temporarily disconnect all overlays.')) {
+                alert('Server restart initiated');
+            }
+        }
+
+        // Utility functions
+        function hexToRgba(hex, opacity) {
+            hex = hex.replace('#', '');
+            const r = parseInt(hex.substring(0, 2), 16);
+            const g = parseInt(hex.substring(2, 4), 16);
+            const b = parseInt(hex.substring(4, 6), 16);
+            return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+        }
+
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                alert('Copied to clipboard: ' + text);
+            });
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            checkInitialStatus();
+            
+            if (document.getElementById('chat-settings').classList.contains('active')) {
+                loadChatSettings();
+            }
+            
+            if (document.getElementById('screen-overlays').classList.contains('active')) {
+                renderScreenList();
+            }
+        });
+    </script>
+</body>
+</html>

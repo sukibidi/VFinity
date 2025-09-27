@@ -1,0 +1,27 @@
+<body style="background:transparent; margin:0; overflow:hidden;">
+  <div id="alerts" style="font-size:24px; color:white; font-weight:bold;"></div>
+
+  <script>
+    function connectWS() {
+      const ws = new WebSocket("ws://localhost:8080");
+
+      ws.onopen = () => console.log("Sub overlay connected ✅");
+      ws.onclose = () => {
+        console.log("Sub overlay disconnected ❌, retrying in 2s...");
+        setTimeout(connectWS, 2000);
+      };
+
+      ws.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        if (data.type !== "sub") return;
+
+        const el = document.createElement("div");
+        el.textContent = `⭐ ${data.user} just subscribed!`;
+        document.getElementById("alerts").appendChild(el);
+
+        setTimeout(() => el.remove(), 5000);
+      };
+    }
+    connectWS();
+  </script>
+</body>
